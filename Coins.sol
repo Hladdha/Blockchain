@@ -37,9 +37,9 @@ contract Coins is IERC20 {
     mapping(address => uint256) private _balanceOf;
     mapping(address => mapping(address => uint256)) private _allowance;
     
-    constructor (string memory Name , string memory Symbol){
-        _name = Name;
-        _symbol = Symbol;
+    constructor (string memory name_ , string memory symbol_){
+        _name = name_;
+        _symbol = symbol_;
         _decimals = 18;
         _deployer = msg.sender;
         _balanceOf[msg.sender] = 1000;
@@ -68,15 +68,10 @@ contract Coins is IERC20 {
     function transfer(address recipient, uint256 amount) external returns (bool) {
         require(recipient != address(0), "transfer to the zero address");
         require(_balanceOf[msg.sender] >= amount, "Insufficient Balance");
-        if(_balanceOf[msg.sender] >= amount){
-            _balanceOf[msg.sender] -= amount;
+           _balanceOf[msg.sender] -= amount;
             _balanceOf[recipient] += amount;
             emit Transfer(msg.sender, recipient, amount);
             return true;
-        }
-        else {
-            return false;
-        }
     }
 
     function approve(address _spender, uint256 _value) public returns (bool success){
@@ -92,30 +87,32 @@ contract Coins is IERC20 {
     function transferFrom(address _from, address _to, uint256 _value) external returns (bool success){
         require(_from != address(0), "transfer from 0 address");
         require(_to != address(0), "transfer to 0 address");
-        if (allowance(_from , msg.sender) >= _value){
+        require(allowance(_from , msg.sender) >= _value);
             uint change = allowance(_from , msg.sender) - _value;
             approve(msg.sender , change);
             _balanceOf[msg.sender] -= _value;
             _balanceOf[_to] += _value;
             emit Transfer(_from , _to , _value);
             return true;
-        }
-        else {
-            return false;
-        }
+        
     }
 
     function _mint(address minter , uint amount) internal {
         _totalSupply += amount;
         _balanceOf[minter] += amount;
 
-        emit Transfer(minter, minter, amount); 
+        emit Transfer(address(0), minter, amount); 
     }
 
     function mint(address minter , uint amount) external {
-        require(minter != _deployer , "not allowed to mint");
+        require(minter == _deployer , "not allowed to mint");
 
         _mint(minter , amount);
+    }
+
+    function burn(uint amount) external {
+        require(_balanceOf[msg.sender] >= amount);
+        _balanceOf[msg.sender] -= amount;
     }
 
 }
